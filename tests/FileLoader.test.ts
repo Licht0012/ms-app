@@ -29,4 +29,21 @@ describe("FileLoader", () => {
     const file = new File(["data"], "song.mscz");
     await expect(loadFile(file)).rejects.toThrow(/unsupported/i);
   });
+
+  it("reads .mxl file by extracting the rootfile listed in META-INF/container.xml", async () => {
+    const file = fileFromFixture("sample.mxl", "application/vnd.recordare.musicxml");
+    const xml = await loadFile(file);
+    expect(xml).toContain("<score-partwise");
+    expect(xml).toContain("<part-name>Lead</part-name>");
+  });
+
+  it("falls back to first .musicxml entry when container.xml is missing", async () => {
+    const JSZip = (await import("jszip")).default;
+    const zip = new JSZip();
+    zip.file("something.musicxml", "<?xml version=\"1.0\"?><score-partwise>fallback</score-partwise>");
+    const buffer = await zip.generateAsync({ type: "arraybuffer" });
+    const file = new File([buffer], "x.mxl");
+    const xml = await loadFile(file);
+    expect(xml).toContain("fallback");
+  });
 });
