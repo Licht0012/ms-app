@@ -1,6 +1,8 @@
 import "./styles/main.css";
+import { AppController } from "./app/AppController";
 
-const app = document.querySelector<HTMLDivElement>("#app");
-if (app) {
-  app.textContent = "ms-app: starting...";
-}
+const root = document.querySelector<HTMLDivElement>("#app");
+if (!root) throw new Error("#app element not found");
+
+const app = new AppController();
+void app.start(root);
