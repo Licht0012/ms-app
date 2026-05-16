@@ -1,10 +1,13 @@
 import { LibraryStore } from "../modules/LibraryStore";
 import { Router, type Route } from "./router";
+import { LibraryView } from "../views/LibraryView";
+import { escapeHtml } from "../utils/html";
 
 export class AppController {
   private readonly store: LibraryStore;
   private readonly router: Router;
   private rootEl!: HTMLElement;
+  private renderToken = 0;
 
   constructor() {
     this.store = new LibraryStore();
@@ -38,11 +41,18 @@ export class AppController {
   }
 
   private async render(route: Route): Promise<void> {
+    const myToken = ++this.renderToken;
     this.rootEl.innerHTML = "";
     switch (route.name) {
-      case "library":
-        this.rootEl.innerHTML = "<p>Library (TODO)</p>";
+      case "library": {
+        const view = new LibraryView(this.store, {
+          onOpen: (id) => this.navigate({ name: "player", scoreId: id }),
+          onOpenSettings: () => this.navigate({ name: "settings" }),
+        });
+        await view.render(this.rootEl);
+        if (myToken !== this.renderToken) return;
         break;
+      }
       case "player":
         this.rootEl.innerHTML = `<p>Player ${escapeHtml(route.scoreId)} (TODO)</p>`;
         break;
@@ -51,10 +61,4 @@ export class AppController {
         break;
     }
   }
-}
-
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
-  );
 }
