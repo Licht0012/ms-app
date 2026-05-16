@@ -22,8 +22,9 @@ const VOLUME_PROFILES: Record<PlayMode, { selected: number; others: number }> = 
  * Notes on the underlying library (v0.7.0):
  *  - Entry point default-exports `PlaybackEngine`.
  *  - `loadScore(osmd)` internally wires `osmd.cursor` — no separate listener call.
- *  - Per-voice volume is read from `Voice.Volume` at note-scheduling time,
- *    so we set both `Instrument.Volume` and `Voice.Volume` to be robust.
+ *  - Per-voice volume is read from `Voice.Volume` at note-scheduling time;
+ *    we mutate each voice's `Volume` directly. `Instrument.Volume` is not
+ *    consulted by the playback engine.
  *  - `setBpm(bpm)` updates playback tempo.
  *  - `stop()` is async (returns Promise) but we expose it as fire-and-forget
  *    to match the planned synchronous signature.
@@ -64,6 +65,13 @@ export class AudioPlayer {
     void this.engine.stop();
   }
 
+  /**
+   * Adjusts per-part volume according to the play mode.
+   *
+   * Takes effect for notes scheduled after this call; in-flight notes within the
+   * audio scheduler's lookahead (~100ms) continue at their previous gain. Callers
+   * that need an immediate switch should pause() and play() to flush the buffer.
+   */
   applyPlayMode(
     mode: PlayMode,
     selectedPartIndex: number,
@@ -76,7 +84,6 @@ export class AudioPlayer {
       const inst = instruments[i];
       if (!inst) continue;
       const volume = i === selectedPartIndex ? selected : others;
-      inst.Volume = volume;
       for (const voice of inst.Voices) {
         voice.Volume = volume;
       }
