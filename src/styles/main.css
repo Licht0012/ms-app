@@ -20,6 +20,8 @@ body { margin: 0; }
 .icon-btn {
   background: none; border: none; color: white;
   font-size: 20px; cursor: pointer; padding: 4px 8px;
+  min-width: 44px; min-height: 44px;
+  display: flex; align-items: center; justify-content: center;
 }
 
 .library { padding: 16px; }
@@ -40,5 +42,7 @@ body { margin: 0; }
   position: absolute; top: 8px; right: 8px;
   background: none; border: none; font-size: 20px; cursor: pointer;
   color: #9ca3af;
+  min-width: 44px; min-height: 44px;
+  display: flex; align-items: center; justify-content: center;
 }
 .empty { text-align: center; color: #6b7280; margin-top: 32px; }

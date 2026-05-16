@@ -7,6 +7,7 @@ import { escapeHtml } from "../utils/html";
 type Callbacks = {
   onOpen: (id: string) => void;
   onOpenSettings: () => void;
+  onChange: () => void;
 };
 
 export class LibraryView {
@@ -18,8 +19,9 @@ export class LibraryView {
     this.callbacks = callbacks;
   }
 
-  async render(root: HTMLElement): Promise<void> {
+  async render(root: HTMLElement, isCurrent?: () => boolean): Promise<void> {
     const records = await this.store.list();
+    if (isCurrent && !isCurrent()) return;
     root.innerHTML = `
       <header class="app-header">
         <h1>🎵 ms-app</h1>
@@ -39,7 +41,7 @@ export class LibraryView {
 
     root.querySelector<HTMLInputElement>("input[type=file]")?.addEventListener("change", (e) => {
       const input = e.target as HTMLInputElement;
-      if (input.files?.[0]) void this.handleUpload(input.files[0], root);
+      if (input.files?.[0]) void this.handleUpload(input.files[0]);
     });
 
     root.querySelector("[data-action=settings]")?.addEventListener("click", () => {
@@ -56,7 +58,7 @@ export class LibraryView {
         e.stopPropagation();
         if (confirm("この楽譜を削除しますか？")) {
           await this.store.delete(id);
-          await this.render(root);
+          this.callbacks.onChange();
         }
       });
     });
@@ -73,7 +75,7 @@ export class LibraryView {
     `;
   }
 
-  private async handleUpload(file: File, root: HTMLElement): Promise<void> {
+  private async handleUpload(file: File): Promise<void> {
     try {
       const xml = await loadFile(file);
       const meta = parseMeta(xml);
@@ -86,7 +88,7 @@ export class LibraryView {
       this.callbacks.onOpen(id);
     } catch (err) {
       alert(`ファイルを読み込めませんでした：${(err as Error).message}`);
-      await this.render(root);
+      this.callbacks.onChange();
     }
   }
 }

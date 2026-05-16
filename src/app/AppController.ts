@@ -48,8 +48,9 @@ export class AppController {
         const view = new LibraryView(this.store, {
           onOpen: (id) => this.navigate({ name: "player", scoreId: id }),
           onOpenSettings: () => this.navigate({ name: "settings" }),
+          onChange: () => void this.render({ name: "library" }),
         });
-        await view.render(this.rootEl);
+        await view.render(this.rootEl, () => myToken === this.renderToken);
         if (myToken !== this.renderToken) return;
         break;
       }
