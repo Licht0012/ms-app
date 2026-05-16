@@ -7,14 +7,24 @@ export type RouteHandler = (route: Route) => void;
 
 export class Router {
   private readonly onChange: RouteHandler;
+  private readonly handleHashChange = (): void => this.dispatch();
+  private started = false;
 
   constructor(onChange: RouteHandler) {
     this.onChange = onChange;
   }
 
   start(): void {
-    window.addEventListener("hashchange", () => this.dispatch());
+    if (this.started) return;
+    this.started = true;
+    window.addEventListener("hashchange", this.handleHashChange);
     this.dispatch();
+  }
+
+  stop(): void {
+    if (!this.started) return;
+    this.started = false;
+    window.removeEventListener("hashchange", this.handleHashChange);
   }
 
   navigate(route: Route): void {
@@ -28,7 +38,7 @@ export class Router {
 
   private parse(hash: string): Route {
     if (hash.startsWith("/player/")) {
-      const scoreId = hash.slice("/player/".length);
+      const scoreId = decodeURIComponent(hash.slice("/player/".length));
       if (scoreId) return { name: "player", scoreId };
     }
     if (hash === "/settings") return { name: "settings" };
@@ -36,7 +46,7 @@ export class Router {
   }
 
   private serialize(route: Route): string {
-    if (route.name === "player") return `#/player/${route.scoreId}`;
+    if (route.name === "player") return `#/player/${encodeURIComponent(route.scoreId)}`;
     if (route.name === "settings") return "#/settings";
     return "#/";
   }
