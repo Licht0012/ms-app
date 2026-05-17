@@ -168,12 +168,20 @@ export class PlayerView {
       this.state.isPlaying = true;
       playBtn.textContent = "⏸";
       playInFlight = true;
+      // IMPORTANT for iOS Safari: kick off ensureAudio() synchronously inside
+      // this click handler so the AudioContext is created/resumed under the
+      // user gesture. Awaiting it later is fine — the microtask boundary is
+      // what matters, and resume() is initiated synchronously inside
+      // ensureAudio() before any other awaits.
+      const ensurePromise = this.player?.ensureAudio();
       try {
+        await ensurePromise;
         await this.player?.play();
       } catch (err) {
         console.error("play failed", err);
         this.state.isPlaying = false;
         playBtn.textContent = "▶";
+        alert("再生に失敗しました：" + (err as Error).message);
       } finally {
         playInFlight = false;
       }
