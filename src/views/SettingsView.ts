@@ -22,6 +22,13 @@ export class SettingsView {
       </header>
       <main class="settings">
         <section>
+          <h2>再生</h2>
+          <label class="tempo-label">
+            テンポ調整 (BPM): <span data-display="tempo">120</span>
+          </label>
+          <input type="range" min="40" max="200" value="120" step="1" data-action="tempo" class="tempo-slider" />
+        </section>
+        <section>
           <h2>ライブラリ</h2>
           <button class="danger-btn" data-action="clear">全ての楽譜を削除</button>
         </section>
@@ -34,6 +41,18 @@ export class SettingsView {
     `;
 
     root.querySelector("[data-action=back]")?.addEventListener("click", () => this.callbacks.onBack());
+
+    const tempoSlider = root.querySelector<HTMLInputElement>("[data-action=tempo]");
+    const tempoDisplay = root.querySelector<HTMLSpanElement>("[data-display=tempo]");
+    if (tempoSlider && tempoDisplay) {
+      const stored = localStorage.getItem("tempo") ?? "120";
+      tempoSlider.value = stored;
+      tempoDisplay.textContent = stored;
+      tempoSlider.addEventListener("input", () => {
+        tempoDisplay.textContent = tempoSlider.value;
+        localStorage.setItem("tempo", tempoSlider.value);
+      });
+    }
 
     root.querySelector("[data-action=clear]")?.addEventListener("click", async () => {
       if (confirm("全ての楽譜を削除します。本当によろしいですか？")) {

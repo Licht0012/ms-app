@@ -114,6 +114,11 @@ export class PlayerView {
 
     this.player.applyPlayMode(this.state.playMode, this.state.selectedPartIndex, record.parts.length);
 
+    const tempo = parseInt(localStorage.getItem("tempo") ?? "120", 10);
+    if (!Number.isNaN(tempo)) {
+      this.player.setTempo(tempo);
+    }
+
     this.bindEvents(root);
     await this.store.setLastOpened(this.scoreId);
   }
