@@ -2,6 +2,7 @@ import { LibraryStore } from "../modules/LibraryStore";
 import { Router, type Route } from "./router";
 import { LibraryView } from "../views/LibraryView";
 import { PlayerView } from "../views/PlayerView";
+import { SettingsView } from "../views/SettingsView";
 
 export class AppController {
   private readonly store: LibraryStore;
@@ -66,9 +67,14 @@ export class AppController {
         await view.render(this.rootEl, () => myToken === this.renderToken);
         break;
       }
-      case "settings":
-        this.rootEl.innerHTML = "<p>Settings (TODO)</p>";
+      case "settings": {
+        const view = new SettingsView(this.store, {
+          onBack: () => this.navigate({ name: "library" }),
+        });
+        this.activeView = view;
+        view.render(this.rootEl);
         break;
+      }
     }
   }
 }
