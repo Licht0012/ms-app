@@ -54,6 +54,9 @@ body { margin: 0; }
   overflow-x: auto;
   min-height: 200px;
   border-bottom: 1px solid #e5e7eb;
+  /* Allow single-finger scrolling but let JS handle two-finger pinch.
+     Without this, iOS Safari hijacks pinches as page-level zoom. */
+  touch-action: pan-x pan-y;
 }
 .controls {
   background: #f9fafb;

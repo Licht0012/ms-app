@@ -111,6 +111,8 @@ export class PlayerView {
       this.renderer.goToMeasure(record.lastState.cursorMeasure);
     }
 
+    this.installPinchZoom(scoreContainer);
+
     this.player = new AudioPlayer();
     try {
       await this.player.load(this.renderer.getOsmd());
@@ -219,6 +221,65 @@ export class PlayerView {
     root.querySelector("[data-action=zoom-reset]")?.addEventListener("click", () => {
       updateZoom(1.0);
     });
+  }
+
+  /**
+   * Two-finger pinch zoom on the score container using Pointer Events.
+   *
+   * Why Pointer Events (not Touch Events): broader compat across iOS Safari,
+   * Android Chrome, and desktop trackpads. CSS `touch-action: pan-x pan-y`
+   * on the container tells the browser we want single-finger gestures to
+   * scroll but we'll handle multi-touch ourselves — so the browser won't
+   * hijack with native pinch-zoom.
+   *
+   * Zoom range matches the +/− buttons (0.5x..3.0x). Base distance is
+   * captured on the second pointerdown and used as the reference for the
+   * pinch ratio; baseZoom snapshots the current zoom so the gesture is
+   * relative, not absolute.
+   */
+  private installPinchZoom(target: HTMLElement): void {
+    const pointers = new Map<number, { x: number; y: number }>();
+    let baseDistance = 0;
+    let baseZoom = this.zoom;
+    let zoomDisplay: HTMLSpanElement | null = null;
+
+    const setZoomFromPinch = (current: number): void => {
+      const next = Math.max(0.5, Math.min(3.0, baseZoom * (current / baseDistance)));
+      this.zoom = next;
+      this.renderer?.setZoom(next);
+      if (!zoomDisplay) {
+        zoomDisplay = document.querySelector<HTMLSpanElement>("[data-display=zoom]");
+      }
+      if (zoomDisplay) zoomDisplay.textContent = `${Math.round(next * 100)}%`;
+    };
+
+    target.addEventListener("pointerdown", (e) => {
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pointers.size === 2) {
+        const [a, b] = [...pointers.values()];
+        baseDistance = Math.hypot(b.x - a.x, b.y - a.y);
+        baseZoom = this.zoom;
+      }
+    });
+
+    target.addEventListener("pointermove", (e) => {
+      if (!pointers.has(e.pointerId)) return;
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pointers.size === 2 && baseDistance > 0) {
+        const [a, b] = [...pointers.values()];
+        const current = Math.hypot(b.x - a.x, b.y - a.y);
+        setZoomFromPinch(current);
+        e.preventDefault();
+      }
+    });
+
+    const endPointer = (e: PointerEvent): void => {
+      pointers.delete(e.pointerId);
+      if (pointers.size < 2) baseDistance = 0;
+    };
+    target.addEventListener("pointerup", endPointer);
+    target.addEventListener("pointercancel", endPointer);
+    target.addEventListener("pointerleave", endPointer);
   }
 
   private applyState(): void {
