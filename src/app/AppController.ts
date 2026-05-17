@@ -1,7 +1,7 @@
 import { LibraryStore } from "../modules/LibraryStore";
 import { Router, type Route } from "./router";
 import { LibraryView } from "../views/LibraryView";
-import { escapeHtml } from "../utils/html";
+import { PlayerView } from "../views/PlayerView";
 
 export class AppController {
   private readonly store: LibraryStore;
@@ -54,9 +54,13 @@ export class AppController {
         if (myToken !== this.renderToken) return;
         break;
       }
-      case "player":
-        this.rootEl.innerHTML = `<p>Player ${escapeHtml(route.scoreId)} (TODO)</p>`;
+      case "player": {
+        const view = new PlayerView(this.store, route.scoreId, {
+          onBack: () => this.navigate({ name: "library" }),
+        });
+        await view.render(this.rootEl, () => myToken === this.renderToken);
         break;
+      }
       case "settings":
         this.rootEl.innerHTML = "<p>Settings (TODO)</p>";
         break;

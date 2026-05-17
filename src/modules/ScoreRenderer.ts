@@ -45,7 +45,17 @@ export class ScoreRenderer {
 
   goToMeasure(measureIndex: number): void {
     this.osmd.cursor.reset();
-    for (let i = 0; i < measureIndex; i++) {
+    const iterator = this.osmd.cursor.Iterator;
+    // Safety counter prevents an infinite loop if the iterator never reaches
+    // the target measure (e.g. malformed score). 100k voice entries is far
+    // beyond any realistic music score length.
+    for (
+      let i = 0;
+      i < 100000 &&
+      !iterator.EndReached &&
+      iterator.CurrentMeasureIndex < measureIndex;
+      i++
+    ) {
       this.osmd.cursor.next();
     }
   }

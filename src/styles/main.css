@@ -46,3 +46,84 @@ body { margin: 0; }
   display: flex; align-items: center; justify-content: center;
 }
 .empty { text-align: center; color: #6b7280; margin-top: 32px; }
+
+.spacer { display: inline-block; min-width: 44px; }
+.score-container {
+  background: white;
+  padding: 8px;
+  overflow-x: auto;
+  min-height: 200px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.controls {
+  background: #f9fafb;
+  padding: 12px 16px;
+  position: sticky;
+  bottom: 0;
+}
+.parts {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin-bottom: 12px;
+  padding-bottom: 4px;
+}
+.part-chip {
+  padding: 8px 16px;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: 14px;
+  min-height: 44px;
+}
+.part-chip.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+.mode-row {
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.mode-row label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+}
+.display-row {
+  font-size: 14px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+.display-row select {
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  min-height: 44px;
+}
+.transport {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+.transport button {
+  width: 56px;
+  height: 56px;
+  font-size: 20px;
+  border: 1px solid #d1d5db;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+}
+.play-btn { background: #3b82f6 !important; color: white; }
+.error { padding: 24px; color: #ef4444; text-align: center; }
