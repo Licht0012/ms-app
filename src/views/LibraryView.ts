@@ -30,7 +30,7 @@ export class LibraryView {
       <main class="library">
         <label class="upload-btn">
           ＋ 楽譜を追加
-          <input type="file" accept=".mxl,.musicxml,.xml,application/xml,text/xml,application/vnd.recordare.musicxml,application/vnd.recordare.musicxml+xml,application/zip" hidden />
+          <input type="file" hidden />
         </label>
         <ul class="score-list">
           ${records.map((r) => this.renderRecord(r)).join("")}
