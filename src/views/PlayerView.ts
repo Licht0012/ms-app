@@ -181,6 +181,7 @@ export class PlayerView {
 
     root.querySelector("[data-action=stop]")?.addEventListener("click", () => {
       this.player?.stop();
+      void this.persist();
       this.state.isPlaying = false;
       if (playBtn) playBtn.textContent = "▶";
     });

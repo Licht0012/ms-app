@@ -84,6 +84,9 @@ export class LibraryView {
     try {
       const xml = await loadFile(file);
       const meta = parseMeta(xml);
+      if (meta.parts.length === 0) {
+        throw new Error("パートが見つかりません（MusicXMLにscore-partが含まれていません）");
+      }
       const id = await this.store.add({
         title: meta.title || file.name,
         parts: meta.parts,

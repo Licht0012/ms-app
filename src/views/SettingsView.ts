@@ -27,6 +27,7 @@ export class SettingsView {
             テンポ調整 (BPM): <span data-display="tempo">120</span>
           </label>
           <input type="range" min="40" max="200" value="120" step="1" data-action="tempo" class="tempo-slider" />
+          <p class="muted">※ テンポ変更は次回楽譜を開いたときに反映されます</p>
         </section>
         <section>
           <h2>ライブラリ</h2>
