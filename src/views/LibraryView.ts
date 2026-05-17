@@ -87,8 +87,12 @@ export class LibraryView {
       if (meta.parts.length === 0) {
         throw new Error("パートが見つかりません（MusicXMLにscore-partが含まれていません）");
       }
+      // Prefer the MusicXML title; if it's the fallback "Untitled", use the file's
+      // basename (without extension) instead so users see something recognizable.
+      const filenameTitle = file.name.replace(/\.(mxl|musicxml|xml)$/i, "");
+      const title = meta.title === "Untitled" ? filenameTitle : meta.title;
       const id = await this.store.add({
-        title: meta.title || file.name,
+        title,
         parts: meta.parts,
         xmlContent: xml,
         fileName: file.name,

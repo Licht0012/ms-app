@@ -5,6 +5,9 @@ import {
 import type { DisplayMode } from "../types";
 
 export class ScoreRenderer {
+  private static readonly MIN_ZOOM = 0.5;
+  private static readonly MAX_ZOOM = 3.0;
+
   private osmd: OpenSheetMusicDisplay;
   private readonly container: HTMLElement;
 
@@ -63,6 +66,17 @@ export class ScoreRenderer {
   getCurrentMeasureIndex(): number {
     const iterator = this.osmd.cursor.Iterator;
     return iterator?.CurrentMeasureIndex ?? 0;
+  }
+
+  setZoom(zoom: number): void {
+    const clamped = Math.max(ScoreRenderer.MIN_ZOOM, Math.min(ScoreRenderer.MAX_ZOOM, zoom));
+    this.osmd.Zoom = clamped;
+    this.osmd.render();
+    this.osmd.cursor.show();
+  }
+
+  getZoom(): number {
+    return this.osmd.Zoom;
   }
 
   dispose(): void {

@@ -22,6 +22,7 @@ export class PlayerView {
   private renderer?: ScoreRenderer;
   private player?: AudioPlayer;
   private record?: ScoreRecord;
+  private zoom = 1.0;
   private state: State = {
     selectedPartIndex: 0,
     playMode: "emphasize",
@@ -57,6 +58,12 @@ export class PlayerView {
         <h1>${escapeHtml(record.title)}</h1>
         <span class="spacer"></span>
       </header>
+      <div class="zoom-row">
+        <button class="zoom-btn" data-action="zoom-out" aria-label="縮小">−</button>
+        <span class="zoom-display" data-display="zoom">100%</span>
+        <button class="zoom-btn" data-action="zoom-in" aria-label="拡大">＋</button>
+        <button class="zoom-btn" data-action="zoom-reset" aria-label="リセット">1:1</button>
+      </div>
       <div class="score-container" id="score-container"></div>
       <div class="controls">
         <div class="parts">
@@ -192,6 +199,22 @@ export class PlayerView {
       void this.persist();
       this.state.isPlaying = false;
       if (playBtn) playBtn.textContent = "▶";
+    });
+
+    const zoomDisplay = root.querySelector<HTMLSpanElement>("[data-display=zoom]");
+    const updateZoom = (newZoom: number) => {
+      this.zoom = newZoom;
+      this.renderer?.setZoom(newZoom);
+      if (zoomDisplay) zoomDisplay.textContent = `${Math.round(newZoom * 100)}%`;
+    };
+    root.querySelector("[data-action=zoom-in]")?.addEventListener("click", () => {
+      updateZoom(Math.min(3.0, this.zoom + 0.2));
+    });
+    root.querySelector("[data-action=zoom-out]")?.addEventListener("click", () => {
+      updateZoom(Math.max(0.5, this.zoom - 0.2));
+    });
+    root.querySelector("[data-action=zoom-reset]")?.addEventListener("click", () => {
+      updateZoom(1.0);
     });
   }
 
