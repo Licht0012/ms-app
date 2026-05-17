@@ -100,6 +100,10 @@ export class PlayerView {
 
     this.renderer.setDisplayMode(this.state.displayMode, this.state.selectedPartIndex);
 
+    if (record.lastState && record.lastState.cursorMeasure > 0) {
+      this.renderer.goToMeasure(record.lastState.cursorMeasure);
+    }
+
     this.player = new AudioPlayer();
     try {
       await this.player.load(this.renderer.getOsmd());
@@ -146,15 +150,27 @@ export class PlayerView {
     });
 
     const playBtn = root.querySelector<HTMLButtonElement>("[data-action=play]");
+    let playInFlight = false;
     playBtn?.addEventListener("click", async () => {
+      if (playInFlight) return;
       if (this.state.isPlaying) {
         this.player?.pause();
         this.state.isPlaying = false;
         playBtn.textContent = "▶";
-      } else {
+        return;
+      }
+      // Optimistic UI before await — prevents double-tap re-entry while play() resolves.
+      this.state.isPlaying = true;
+      playBtn.textContent = "⏸";
+      playInFlight = true;
+      try {
         await this.player?.play();
-        this.state.isPlaying = true;
-        playBtn.textContent = "⏸";
+      } catch (err) {
+        console.error("play failed", err);
+        this.state.isPlaying = false;
+        playBtn.textContent = "▶";
+      } finally {
+        playInFlight = false;
       }
     });
 
@@ -180,5 +196,12 @@ export class PlayerView {
       cursorMeasure: this.renderer?.getCurrentMeasureIndex() ?? 0,
       tempo: this.record.lastState?.tempo ?? 120,
     });
+  }
+
+  dispose(): void {
+    this.player?.dispose();
+    this.player = undefined;
+    this.renderer?.dispose();
+    this.renderer = undefined;
   }
 }

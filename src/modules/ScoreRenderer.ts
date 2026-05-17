@@ -64,4 +64,9 @@ export class ScoreRenderer {
     const iterator = this.osmd.cursor.Iterator;
     return iterator?.CurrentMeasureIndex ?? 0;
   }
+
+  dispose(): void {
+    // OSMD's clear() removes the rendered SVG and the autoResize window listener.
+    this.osmd.clear();
+  }
 }

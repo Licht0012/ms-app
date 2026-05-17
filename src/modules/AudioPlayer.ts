@@ -94,4 +94,12 @@ export class AudioPlayer {
     if (!this.engine.ready) return;
     this.engine.setBpm(bpm);
   }
+
+  dispose(): void {
+    // PlaybackEngine (v0.7.0) has no dispose method — stop() is the
+    // only available teardown hook for clearing scheduled audio.
+    if (this.engine.ready) {
+      void this.engine.stop();
+    }
+  }
 }

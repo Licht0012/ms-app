@@ -8,6 +8,7 @@ export class AppController {
   private readonly router: Router;
   private rootEl!: HTMLElement;
   private renderToken = 0;
+  private activeView?: { dispose(): void };
 
   constructor() {
     this.store = new LibraryStore();
@@ -42,6 +43,8 @@ export class AppController {
 
   private async render(route: Route): Promise<void> {
     const myToken = ++this.renderToken;
+    this.activeView?.dispose();
+    this.activeView = undefined;
     this.rootEl.innerHTML = "";
     switch (route.name) {
       case "library": {
@@ -50,6 +53,7 @@ export class AppController {
           onOpenSettings: () => this.navigate({ name: "settings" }),
           onChange: () => void this.render({ name: "library" }),
         });
+        this.activeView = view;
         await view.render(this.rootEl, () => myToken === this.renderToken);
         if (myToken !== this.renderToken) return;
         break;
@@ -58,6 +62,7 @@ export class AppController {
         const view = new PlayerView(this.store, route.scoreId, {
           onBack: () => this.navigate({ name: "library" }),
         });
+        this.activeView = view;
         await view.render(this.rootEl, () => myToken === this.renderToken);
         break;
       }

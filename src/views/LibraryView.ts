@@ -75,6 +75,11 @@ export class LibraryView {
     `;
   }
 
+  dispose(): void {
+    // No-op: LibraryView has no long-lived resources. Implemented for
+    // interface uniformity with PlayerView in AppController.
+  }
+
   private async handleUpload(file: File): Promise<void> {
     try {
       const xml = await loadFile(file);
