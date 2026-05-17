@@ -24,7 +24,7 @@ export class LibraryView {
     if (isCurrent && !isCurrent()) return;
     root.innerHTML = `
       <header class="app-header">
-        <h1>🎵 ms-app</h1>
+        <h1>🎵 hamo-navi</h1>
         <button class="icon-btn" data-action="settings" aria-label="設定">⚙</button>
       </header>
       <main class="library">
@@ -87,10 +87,11 @@ export class LibraryView {
       if (meta.parts.length === 0) {
         throw new Error("パートが見つかりません（MusicXMLにscore-partが含まれていません）");
       }
-      // Prefer the MusicXML title; if it's the fallback "Untitled", use the file's
-      // basename (without extension) instead so users see something recognizable.
+      // parseMeta returns "" when no title metadata exists. Any falsy/empty
+      // title falls back to the filename basename so users see something
+      // recognizable instead of a placeholder.
       const filenameTitle = file.name.replace(/\.(mxl|musicxml|xml)$/i, "");
-      const title = meta.title === "Untitled" ? filenameTitle : meta.title;
+      const title = meta.title || filenameTitle;
       const id = await this.store.add({
         title,
         parts: meta.parts,

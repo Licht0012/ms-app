@@ -8,8 +8,8 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["icons/*"],
       manifest: {
-        name: "ms-app - アカペラ音取り",
-        short_name: "ms-app",
+        name: "hamo-navi - アカペラ音取り",
+        short_name: "hamo-navi",
         description: "MusicXML をアップロードしてアカペラの音取りができる PWA",
         theme_color: "#1f2937",
         background_color: "#ffffff",

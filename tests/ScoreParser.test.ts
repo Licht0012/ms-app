@@ -29,7 +29,7 @@ describe("ScoreParser.parseMeta", () => {
     expect(meta.parts[0].shortName).toBe("S");
   });
 
-  it("falls back to 'Untitled' when no work title", () => {
+  it("returns empty title when no work-title, movement-title, or credit-words", () => {
     const xml = `<?xml version="1.0"?>
       <score-partwise>
         <part-list>
@@ -37,6 +37,6 @@ describe("ScoreParser.parseMeta", () => {
         </part-list>
       </score-partwise>`;
     const meta = parseMeta(xml);
-    expect(meta.title).toBe("Untitled");
+    expect(meta.title).toBe("");
   });
 });

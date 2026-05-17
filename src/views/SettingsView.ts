@@ -35,7 +35,7 @@ export class SettingsView {
         </section>
         <section>
           <h2>このアプリについて</h2>
-          <p>ms-app - アカペラ音取り PWA</p>
+          <p>hamo-navi - アカペラ音取り PWA</p>
           <p class="muted">楽譜データは端末内に保存され、サーバーには送信されません。</p>
         </section>
       </main>

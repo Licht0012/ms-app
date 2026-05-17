@@ -158,6 +158,9 @@ export class PlayerView {
     root.querySelector<HTMLSelectElement>("[data-action=display-mode]")?.addEventListener("change", (e) => {
       this.state.displayMode = (e.target as HTMLSelectElement).value as DisplayMode;
       this.renderer?.setDisplayMode(this.state.displayMode, this.state.selectedPartIndex);
+      // Re-apply zoom: setDisplayMode triggers osmd.render(), which can visually
+      // reset zoom to 100% in some cases. Restoring it keeps the user's choice.
+      this.renderer?.setZoom(this.zoom);
       void this.persist();
     });
 
@@ -222,6 +225,9 @@ export class PlayerView {
     if (!this.record) return;
     this.player?.applyPlayMode(this.state.playMode, this.state.selectedPartIndex, this.record.parts.length);
     this.renderer?.setDisplayMode(this.state.displayMode, this.state.selectedPartIndex);
+    // setDisplayMode re-renders OSMD; re-apply the user's zoom so changing
+    // the selected part (or display mode) doesn't visually reset to 100%.
+    this.renderer?.setZoom(this.zoom);
   }
 
   private async persist(): Promise<void> {
