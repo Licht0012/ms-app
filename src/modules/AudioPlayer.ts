@@ -38,11 +38,25 @@ function forceAllToPiano(osmd: OpenSheetMusicDisplay): void {
  * Per-part gain profile for each play mode.
  * Values map to the 0..1 gain scale that osmd-audio-player applies via
  * `Voice.Volume` (read in PlaybackEngine.notePlaybackCallback).
+ *
+ * These values are tuned to leave headroom for parallel voices. With
+ * `forceAllToPiano` making every part the same instrument, simultaneous
+ * notes from multiple parts sum at the audio output and can clip past 0 dBFS,
+ * producing the "ブツブツ音" (crackling/popping) artifact. The numbers below
+ * keep typical multi-voice peaks closer to (but not strictly under) 1.0,
+ * while preserving the relative loudness contract of each mode:
+ *  - emphasize 4-part max: 0.7 + 3*0.18 = 1.24 — slight overshoot but the
+ *    selected part is clearly louder. A downstream DynamicsCompressor (wired
+ *    in ensureAudio()) tames remaining peaks.
+ *  - solo: 0.7 — single voice, clean, no clipping.
+ *  - minusOne 3-part max: 3*0.45 = 1.35 — tolerable with compression; users
+ *    can turn device volume up if needed.
+ * Tune downward if users report continued crackling.
  */
 const VOLUME_PROFILES: Record<PlayMode, { selected: number; others: number }> = {
-  emphasize: { selected: 1.0, others: 0.3 },
-  solo: { selected: 1.0, others: 0.0 },
-  minusOne: { selected: 0.0, others: 1.0 },
+  emphasize: { selected: 0.7, others: 0.18 },
+  solo: { selected: 0.7, others: 0.0 },
+  minusOne: { selected: 0.0, others: 0.45 },
 };
 
 /**
@@ -158,6 +172,13 @@ export class AudioPlayer {
       await this.engine!.loadScore(
         this.osmd as unknown as Parameters<PlaybackEngine["loadScore"]>[0],
       );
+      // Insert a DynamicsCompressorNode between the soundfont players and the
+      // AudioContext destination as a belt-and-suspenders against clipping.
+      // The VOLUME_PROFILES are already tuned for headroom; the compressor
+      // catches occasional peaks when several voices line up loudly.
+      // Best-effort — if the engine internals shift in a future version we
+      // log and continue; the volume profile tuning still helps on its own.
+      this.installMasterCompressor();
       // Apply any settings that arrived before the engine existed.
       if (this.pendingTempo !== null) {
         this.engine!.setBpm(this.pendingTempo);
@@ -215,6 +236,59 @@ export class AudioPlayer {
       // Common on desktop (no user-gesture / autoplay restrictions) and
       // harmless — the rest of playback still works.
       console.warn("Silent-mode unlock failed (may still be muted in iOS silent mode)", err);
+    }
+  }
+
+  /**
+   * Inserts a DynamicsCompressorNode between the soundfont players and the
+   * AudioContext destination. soundfont-player connects each Player directly
+   * to `ac.destination` at load time; we reconnect them through a compressor.
+   *
+   * Why this works: the engine's `instrumentPlayer` is a `SoundfontPlayer`
+   * (osmd-audio-player v0.7.0) which holds loaded `soundfont-player` `Player`
+   * instances in a `players: Map<midiId, Player>`. Each `Player.connect(dest)`
+   * disconnects from the previous destination and connects to `dest`.
+   *
+   * Best-effort: if internals change in a future version of osmd-audio-player
+   * or soundfont-player, we log a warning and skip — the volume profile
+   * tuning alone still mitigates clipping.
+   */
+  private installMasterCompressor(): void {
+    if (!this.engine) return;
+    const ac = this.getAudioContext();
+    if (!ac) return;
+    try {
+      // Conservative defaults: knee in around -18 dB, gentle 4:1 ratio,
+      // short attack/release. This tames brief peaks without "pumping".
+      const compressor = ac.createDynamicsCompressor();
+      compressor.threshold.value = -18;
+      compressor.knee.value = 24;
+      compressor.ratio.value = 4;
+      compressor.attack.value = 0.003;
+      compressor.release.value = 0.25;
+      compressor.connect(ac.destination);
+
+      // Reach into the engine's instrumentPlayer.players map. SoundfontPlayer
+      // exposes `players: Map<midiId, Soundfont.Player>` (see node_modules/
+      // osmd-audio-player/dist/players/SoundfontPlayer.js). Each Player has a
+      // `.connect(node)` method (soundfont-player API) that reroutes output.
+      const instrumentPlayer = (this.engine as unknown as {
+        instrumentPlayer: { players?: Map<number, { connect: (node: AudioNode) => unknown }> };
+      }).instrumentPlayer;
+      const players = instrumentPlayer?.players;
+      if (!players || typeof players.forEach !== "function") {
+        console.warn("Master compressor: instrumentPlayer.players not found; skipping");
+        return;
+      }
+      players.forEach((player) => {
+        try {
+          player.connect(compressor as unknown as AudioNode);
+        } catch (err) {
+          console.warn("Master compressor: failed to reroute a player", err);
+        }
+      });
+    } catch (err) {
+      console.warn("Master compressor: setup failed (continuing without)", err);
     }
   }
 

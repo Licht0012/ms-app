@@ -23,6 +23,9 @@ export class PlayerView {
   private player?: AudioPlayer;
   private record?: ScoreRecord;
   private zoom = 1.0;
+  // Single source of truth for zoom updates. Captured in bindEvents() so the
+  // pinch-zoom handler can keep the slider in sync without duplicating logic.
+  private updateZoomFn?: (newZoom: number) => void;
   private state: State = {
     selectedPartIndex: 0,
     playMode: "emphasize",
@@ -59,10 +62,18 @@ export class PlayerView {
         <span class="spacer"></span>
       </header>
       <div class="zoom-row">
-        <button class="zoom-btn" data-action="zoom-out" aria-label="縮小">−</button>
-        <span class="zoom-display" data-display="zoom">100%</span>
-        <button class="zoom-btn" data-action="zoom-in" aria-label="拡大">＋</button>
-        <button class="zoom-btn" data-action="zoom-reset" aria-label="リセット">1:1</button>
+        <span class="zoom-icon" aria-hidden="true">🔍</span>
+        <input
+          type="range"
+          min="50"
+          max="300"
+          step="5"
+          value="${Math.round(this.zoom * 100)}"
+          data-action="zoom"
+          class="zoom-slider"
+          aria-label="譜面の拡大率"
+        />
+        <span class="zoom-display" data-display="zoom">${Math.round(this.zoom * 100)}%</span>
       </div>
       <div class="score-container" id="score-container"></div>
       <div class="controls">
@@ -207,19 +218,23 @@ export class PlayerView {
     });
 
     const zoomDisplay = root.querySelector<HTMLSpanElement>("[data-display=zoom]");
-    const updateZoom = (newZoom: number) => {
-      this.zoom = newZoom;
-      this.renderer?.setZoom(newZoom);
-      if (zoomDisplay) zoomDisplay.textContent = `${Math.round(newZoom * 100)}%`;
+    const zoomSlider = root.querySelector<HTMLInputElement>("[data-action=zoom]");
+    // Single source of truth for zoom: keeps slider, display, and pinch-zoom
+    // in sync. Idempotent — re-assigning the slider's `value` to the same
+    // string is a no-op and does NOT re-fire the `input` event, so calling
+    // this from the slider's own `input` handler doesn't loop.
+    const updateZoom = (newZoom: number): void => {
+      const clamped = Math.max(0.5, Math.min(3.0, newZoom));
+      this.zoom = clamped;
+      this.renderer?.setZoom(clamped);
+      const pct = Math.round(clamped * 100);
+      if (zoomDisplay) zoomDisplay.textContent = `${pct}%`;
+      if (zoomSlider) zoomSlider.value = String(pct);
     };
-    root.querySelector("[data-action=zoom-in]")?.addEventListener("click", () => {
-      updateZoom(Math.min(3.0, this.zoom + 0.2));
-    });
-    root.querySelector("[data-action=zoom-out]")?.addEventListener("click", () => {
-      updateZoom(Math.max(0.5, this.zoom - 0.2));
-    });
-    root.querySelector("[data-action=zoom-reset]")?.addEventListener("click", () => {
-      updateZoom(1.0);
+    this.updateZoomFn = updateZoom;
+    zoomSlider?.addEventListener("input", () => {
+      const pct = parseInt(zoomSlider.value, 10);
+      if (!Number.isNaN(pct)) updateZoom(pct / 100);
     });
   }
 
@@ -241,16 +256,20 @@ export class PlayerView {
     const pointers = new Map<number, { x: number; y: number }>();
     let baseDistance = 0;
     let baseZoom = this.zoom;
-    let zoomDisplay: HTMLSpanElement | null = null;
 
     const setZoomFromPinch = (current: number): void => {
-      const next = Math.max(0.5, Math.min(3.0, baseZoom * (current / baseDistance)));
-      this.zoom = next;
-      this.renderer?.setZoom(next);
-      if (!zoomDisplay) {
-        zoomDisplay = document.querySelector<HTMLSpanElement>("[data-display=zoom]");
+      const next = baseZoom * (current / baseDistance);
+      // Delegate to the single source of truth so the slider/display stay in
+      // sync. updateZoomFn handles clamping (0.5x..3.0x).
+      if (this.updateZoomFn) {
+        this.updateZoomFn(next);
+      } else {
+        // Fallback if bindEvents() has not yet wired updateZoomFn — keep
+        // behavior identical to the previous direct-write path.
+        const clamped = Math.max(0.5, Math.min(3.0, next));
+        this.zoom = clamped;
+        this.renderer?.setZoom(clamped);
       }
-      if (zoomDisplay) zoomDisplay.textContent = `${Math.round(next * 100)}%`;
     };
 
     target.addEventListener("pointerdown", (e) => {

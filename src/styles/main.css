@@ -150,25 +150,22 @@ body { margin: 0; }
 .zoom-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px;
+  gap: 12px;
+  padding: 8px 12px;
   background: #f3f4f6;
   border-bottom: 1px solid #e5e7eb;
-  justify-content: center;
 }
-.zoom-btn {
-  min-width: 44px;
+.zoom-icon {
+  font-size: 16px;
+}
+.zoom-slider {
+  flex: 1;
   min-height: 44px;
-  background: white;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 18px;
-  cursor: pointer;
-  font-weight: bold;
 }
 .zoom-display {
-  min-width: 56px;
-  text-align: center;
-  font-size: 14px;
+  min-width: 48px;
+  text-align: right;
+  font-size: 13px;
   color: #374151;
+  font-variant-numeric: tabular-nums;
 }
